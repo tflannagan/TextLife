@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text of Life | Ty</title>
+    <link rel="icon" type="image/png" href="favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sankofa+Display&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&family=Playwrite+Deutschland+Grundschrift&family=Josefin+Sans&family=Dancing+Script&display=swap" rel="stylesheet">
+    <style>
+      
+        
+        body {
+            font-family: "Sankofa Display", sans-serif !important;
+            margin: 0;
+            padding: 0;
+            background-color: #0c0c1d;
+            color: #00ffff;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        .main-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            transition: all 0.3s ease;
+            
+        }
+        .game-container {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+        
+         
+        }
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+        .overlay {
+            position: absolute;
+            padding: 8px;
+            background-color: rgba(12, 12, 29, 0.8);
+            border-radius: 5px;
+            font-size: 0.9rem;
+            border: 1px solid #00ffff;
+        }
+        .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.stat-graph {
+    margin-top: 8px;
+}
+
+.graph-label {
+    font-size: 0.8rem;
+    color: rgba(0, 255, 255, 0.7);
+    margin-bottom: 4px;
+}
+
+#statsOverlay {
+    width: 200px;
+    padding: 12px;
+    bottom: 10px;
+    left: 10px;
+}
+
+.stat-value {
+    color: #00ffff;
+    font-weight: bold;
+    float: right;
+    margin-top: 2px;
+}
+        .side-panel {
+            width: 250px;
+            background-color: rgba(26, 26, 58, 0.9);
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            transition: transform 0.3s ease, width 0.3s ease;
+            position: relative;
+        }
+        .side-panel.collapsed {
+            transform: translateX(100%);
+            width: 0;
+            padding: 0;
+        }
+        .toggle-panel {
+            position: absolute;
+            left: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(26, 26, 58, 0.9);
+            color: #00ffff;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px 0 0 5px;
+            transition: transform 0.3s ease;
+            z-index: 10;
+        }
+        .toggle-panel:hover {
+            background-color: rgba(0, 255, 255, 0.2);
+        }
+        .toggle-panel.collapsed {
+            transform: translateY(-50%) rotate(180deg);
+            border-radius: 0 5px 5px 0;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-family: "Sankofa Display", sans-serif !important;
+        }
+        button {
+            font-family: "Sankofa Display", sans-serif !important;
+            font-size: 1rem;
+            padding: 10px 15px;
+            cursor: pointer;
+            background-color: #1a1a3a;
+            color: #00ffff;
+            border: 2px solid #00ffff;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        button:hover {
+            background-color: #00ffff;
+            color: #1a1a3a;
+        }
+        .theme-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+            background-color: rgba(26, 26, 58, 0.8);
+            border-radius: 5px;
+            padding: 10px;
+            border: 1px solid #00ffff;
+        }
+        .theme-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .theme-option:hover {
+            transform: scale(1.1);
+        }
+        .theme-option.selected::after {
+            content: '✓';
+            color: white;
+            font-size: 24px;
+            text-shadow: 0 0 3px black;
+        }
+        .color-preview {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin: 0 -2px;
+        }
+        .font-selector {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+            background-color: rgba(26, 26, 58, 0.8);
+            border-radius: 5px;
+            padding: 15px;
+            border: 1px solid #00ffff;
+        }
+        .font-option {
+            width: 80px;
+            height: 40px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 14px;
+            text-align: center;
+        }
+        .font-option:hover {
+            transform: scale(1.1);
+        }
+        .font-option.selected {
+            border: 2px solid #00ffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="game-container">
+            <canvas id="gameCanvas"></canvas>
+            <div id="statsOverlay" class="overlay">
+                <div class="stat-row">
+                    <span class="stat-label">Gen:</span>
+                    <span class="stat-value" id="generationCount">0</span>
+                </div>
+                <div class="stat-graph">
+                    <div class="graph-label">Population</div>
+                    <canvas id="populationGraph" width="150" height="40"></canvas>
+                    <span class="stat-value" id="populationCount">0</span>
+                </div>
+            </div>
+        </div>
+        <div class="side-panel">
+            <button class="toggle-panel">◀</button>
+            <div class="controls">
+                <button id="startStopBtn">Start</button>
+                <button id="resetBtn"><svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#00ffff"><path d="M480-90q-70 0-131.13-26.6-61.14-26.6-106.4-71.87-45.27-45.26-71.87-106.4Q144-356 144-426h72q0 109 77.5 186.5T480-162q109 0 186.5-77.5T744-426q0-109-77.5-186.5T479.61-690H474l51 51-51 51-138-138 138-138 51 51-52 51h7q70 0 131.13 26.6 61.14 26.6 106.4 71.87 45.27 45.26 71.87 106.4Q816-496 816-426t-26.6 131.13q-26.6 61.14-71.87 106.4-45.26 45.27-106.4 71.87Q550-90 480-90Z"/></svg></button>
+                
+                <input type="range" id="speedControl" min="1" max="100" value="50">
+<span id="speedValue">Speed: 50</span>
+            </div>
+            <div class="theme-selector" id="themeSelector"></div>
+            <div class="font-selector" id="fontSelector"></div>    
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startStopBtn = document.getElementById('startStopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const generationCount = document.getElementById('generationCount');
+        const populationCount = document.getElementById('populationCount');
+        const avgEnergy = document.getElementById('avgEnergy');
+        const sidePanel = document.querySelector('.side-panel');
+        const togglePanel = document.querySelector('.toggle-panel');
+        const speedControl = document.getElementById('speedControl');
+        const speedValue = document.getElementById('speedValue');
+    
+        let width, height;
+        let grid = [];
+        let isRunning = false;
+        let generation = 0;
+        let cellSize = 12;
+        let updateInterval = 90;
+    
+        const colorThemes = [
+            { name: 'Default', primary: '#00ffff', secondary: '#e94560', tertiary: '#c5ee4f', background: '#0c0c1d' },
+            { name: 'Neon Nights', primary: '#ff00ff', secondary: '#00ff00', tertiary: '#ffff00', background: '#000000' },
+            { name: 'Pastel Dream', primary: '#ffffff', secondary: '#bae1ff', tertiary: '#baffc9', background: '#32a5ba' },
+            { name: 'Cyber Punk', primary: '#f72585', secondary: '#4361ee', tertiary: '#4cc9f0', background: '#3a0ca3' },
+            { name: 'Forest', primary: '#2d6a4F', secondary: '#ffffff', tertiary: '#d8f3dc', background: '#1b4332' },
+            { name: 'Sunset', primary: '#ff7b00', secondary: '#ffb700', tertiary: '#ff006e', background: '#330033' },
+            { name: 'Ocean', primary: '#00b4d8', secondary: '#0077b6', tertiary: '#caf0f8', background: '#03045e' },
+            { name: 'Monochrome', primary: '#ffffff', secondary: '#cccccc', tertiary: '#666666', background: '#000000' },
+        ];
+    
+        let currentTheme = colorThemes[0];
+    
+        const fonts = [
+            { name: 'Sankofa Display', fontFamily: 'Sankofa Display' },
+            { name: 'Playwrite', fontFamily: 'Playwrite Deutschland Grundschrift' },
+            { name: 'Josefin Sans', fontFamily: 'Josefin Sans' },
+            { name: 'Dancing Script', fontFamily: 'Dancing Script' }
+        ];
+    
+        let currentFont = fonts[0];
+    
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?/\\\'"`~';
+    
+        class Entity {
+            constructor(character = characters[Math.floor(Math.random() * characters.length)]) {
+                this.character = character;
+                this.age = 0;
+                this.energy = 100;
+            }
+        }
+    
+        function initThemeSelector() {
+            const themeSelector = document.getElementById('themeSelector');
+            themeSelector.innerHTML = '';
+            colorThemes.forEach((theme, index) => {
+                const themeOption = document.createElement('div');
+                themeOption.className = 'theme-option';
+                themeOption.style.backgroundColor = theme.background;
+                themeOption.innerHTML = `
+                    <div class="color-preview" style="background-color: ${theme.primary}"></div>
+                    <div class="color-preview" style="background-color: ${theme.secondary}"></div>
+                    <div class="color-preview" style="background-color: ${theme.tertiary}"></div>
+                `;
+                themeOption.addEventListener('click', () => selectTheme(index));
+                themeSelector.appendChild(themeOption);
+            });
+            updateSelectedTheme();
+        }
+    
+        function selectTheme(index) {
+            currentTheme = colorThemes[index];
+            updateSelectedTheme();
+            updateGameColors();
+        }
+    
+        function updateSelectedTheme() {
+            const themeOptions = document.querySelectorAll('.theme-option');
+            themeOptions.forEach((option, index) => {
+                option.classList.toggle('selected', colorThemes[index] === currentTheme);
+            });
+        }
+    
+        function updateGameColors() {
+            document.body.style.backgroundColor = currentTheme.background;
+            document.body.style.color = currentTheme.primary;
+            drawGrid();
+        }
+    
+        function initFontSelector() {
+            const fontSelector = document.getElementById('fontSelector');
+            fontSelector.innerHTML = '';
+            fonts.forEach((font, index) => {
+                const fontOption = document.createElement('div');
+                fontOption.className = 'font-option';
+                fontOption.style.fontFamily = font.fontFamily;
+                fontOption.textContent = 'Aa';
+                fontOption.addEventListener('click', () => selectFont(index));
+                fontSelector.appendChild(fontOption);
+            });
+            updateSelectedFont();
+        }
+    
+        function selectFont(index) {
+            currentFont = fonts[index];
+            updateSelectedFont();
+            updateGameFont();
+        }
+    
+        function updateSelectedFont() {
+            const fontOptions = document.querySelectorAll('.font-option');
+            fontOptions.forEach((option, index) => {
+                option.classList.toggle('selected', fonts[index] === currentFont);
+            });
+        }
+    
+        function updateGameFont() {
+            ctx.font = `${cellSize}px ${currentFont.fontFamily}`;
+            drawGrid();
+        }
+    
+        function resizeCanvas() {
+            const mainContainer = document.querySelector('.main-container');
+            canvas.width = mainContainer.clientWidth;
+            canvas.height = mainContainer.clientHeight;
+            
+            const newWidth = Math.floor(canvas.width / cellSize);
+            const newHeight = Math.floor(canvas.height / cellSize);
+            
+            if (newWidth !== width || newHeight !== height) {
+                const newGrid = Array(newHeight).fill().map(() => Array(newWidth).fill(null));
+                
+               
+                for (let i = 0; i < Math.min(grid.length, newHeight); i++) {
+                    for (let j = 0; j < Math.min(grid[0].length, newWidth); j++) {
+                        newGrid[i][j] = grid[i][j];
+                    }
+                }
+                
+
+                for (let i = 0; i < newHeight; i++) {
+                    for (let j = 0; j < newWidth; j++) {
+                        if (i >= grid.length || j >= grid[0].length) {
+                            if (Math.random() > 0.8) {
+                                newGrid[i][j] = new Entity();
+                            }
+                        }
+                    }
+                }
+                
+                grid = newGrid;
+                width = newWidth;
+                height = newHeight;
+            }
+            
+            drawGrid();
+            updateStats();
+        }
+    
+        function initGrid() {
+            grid = Array(height).fill().map(() => Array(width).fill(null));
+            for (let i = 0; i < height; i++) {
+                for (let j = 0; j < width; j++) {
+                    if (Math.random() > 0.8) {
+                        grid[i][j] = new Entity();
+                    }
+                }
+            }
+            generation = 0;
+            updateStats();
+            drawGrid();
+        }
+    
+        function updateGrid() {
+            const newGrid = Array(height).fill().map(() => Array(width).fill(null));
+            for (let i = 0; i < height; i++) {
+                for (let j = 0; j < width; j++) {
+                    const neighbors = countNeighbors(i, j);
+                    if (grid[i][j]) {
+                        // Survival rules
+                        if (neighbors === 2 || neighbors === 3) {
+                            newGrid[i][j] = grid[i][j];
+                            newGrid[i][j].age++;
+                        }
+                    } else {
+                        // Reproduction rule
+                        if (neighbors === 3) {
+                            const parentChars = getParentCharacters(i, j);
+                            const newChar = parentChars[Math.floor(Math.random() * parentChars.length)];
+                            newGrid[i][j] = new Entity(newChar);
+                        } else if (Math.random() < 0.0001) {  // Small chance for random generation
+                            newGrid[i][j] = new Entity();
+                        }
+                    }
+                }
+            }
+            grid = newGrid;
+            generation++;
+            updateStats();
+        }    
+        
+        function countNeighbors(x, y) {
+            let count = 0;
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                    if (i === 0 && j === 0) continue;
+                    const newX = (x + i + height) % height;
+                    const newY = (y + j + width) % width;
+                    if (grid[newX][newY]) count++;
+                }
+            }
+            return count;
+        }
+    
+        function getParentCharacters(x, y) {
+            const parentChars = [];
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                    if (i === 0 && j === 0) continue;
+                    const newX = (x + i + height) % height;
+                    const newY = (y + j + width) % width;
+                    if (grid[newX][newY]) parentChars.push(grid[newX][newY].character);
+                }
+            }
+            return parentChars;
+        }
+    
+        function updateStats() {
+    const maxDataPoints = 50;
+    
+  
+    if (!window.statHistory) {
+        window.statHistory = {
+            population: new Array(maxDataPoints).fill(0)
+        };
+    }
+
+   
+    generationCount.textContent = generation;
+
+
+    const population = grid.flat().filter(cell => cell !== null).length;
+
+
+    populationCount.textContent = population;
+
+    statHistory.population.push(population);
+    if (statHistory.population.length > maxDataPoints) {
+        statHistory.population.shift();
+    }
+
+    const popCanvas = document.getElementById('populationGraph');
+    const popCtx = popCanvas.getContext('2d');
+    drawGraph(popCtx, statHistory.population, currentTheme.secondary);
+}
+        
+        function drawGraph(ctx, data, color) {
+            const width = ctx.canvas.width;
+            const height = ctx.canvas.height;
+            const maxValue = Math.max(...data) || 1;
+
+            ctx.clearRect(0, 0, width, height);
+            
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(0, 0, width, height);
+            
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+
+            data.forEach((value, index) => {
+                const x = (index / (data.length - 1)) * width;
+                const y = height - (value / maxValue) * height;
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+
+            ctx.stroke();
+
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.closePath();
+            ctx.fillStyle = color + '20';
+            ctx.fill();
+        }
+        
+        function drawGrid() {
+            ctx.fillStyle = currentTheme.background;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = `900 ${cellSize}px ${currentFont.fontFamily}`;
+            
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            ctx.lineWidth = 0.9;
+            
+            for (let i = 0; i < height; i++) {
+                for (let j = 0; j < width; j++) {
+                    if (grid[i][j]) {
+                        
+                        const ageRatio = Math.min(grid[i][j].age / 100, 1);
+                        ctx.fillStyle = interpolateColor(
+                            currentTheme.secondary,
+                            currentTheme.primary,
+                            ageRatio
+                        );
+                        ctx.fillText(
+                            grid[i][j].character,
+                            (j + 0.5) * cellSize,
+                            (i + 0.5) * cellSize
+                        );
+                    }
+                }
+            }
+        }
+        
+        function interpolateColor(color1, color2, factor) {
+                    const result = color1.slice(1).match(/.{2}/g).map((hex, i) => {
+                        const rgb1 = parseInt(hex, 16);
+                        const rgb2 = parseInt(color2.slice(1).match(/.{2}/g)[i], 16);
+                        const interpolated = Math.round(rgb1 + (rgb2 - rgb1) * factor);
+                        return interpolated.toString(16).padStart(2, '0');
+                    });
+                    return `#${result.join('')}`;
+                }
+            
+        function gameLoop(timestamp) {
+            if (!lastUpdateTime) lastUpdateTime = timestamp;
+            const elapsed = timestamp - lastUpdateTime;
+    
+            if (elapsed > updateInterval) {
+                updateGrid();
+                drawGrid();
+                lastUpdateTime = timestamp;
+            }
+    
+            if (isRunning) {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+    
+        let lastUpdateTime = 0;
+    
+        togglePanel.addEventListener('click', () => {
+            sidePanel.classList.toggle('collapsed');
+            togglePanel.classList.toggle('collapsed');
+            resizeCanvas();
+        });
+    
+        window.addEventListener('resize', resizeCanvas);
+    
+        startStopBtn.addEventListener('click', () => {
+            isRunning = !isRunning;
+            startStopBtn.textContent = isRunning ? 'Stop' : 'Start';
+            if (isRunning) {
+                lastUpdateTime = 0;
+                requestAnimationFrame(gameLoop);
+            }
+        });
+    
+        speedControl.addEventListener('input', () => {
+            updateInterval = 100 - speedControl.value;
+            speedValue.textContent = `Speed: ${speedControl.value}`;
+        });
+    
+        resetBtn.addEventListener('click', initGrid);
+    
+
+        document.addEventListener('DOMContentLoaded', () => {
+   
+    window.statHistory = {
+        population: new Array(50).fill(0),
+     
+    };
+    
+    initThemeSelector();
+    initFontSelector();
+    resizeCanvas();
+    initGrid();
+});
+    </script>
+</body>
+</html>
