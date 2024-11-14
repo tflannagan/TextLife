@@ -260,6 +260,11 @@
         let generation = 0;
         let cellSize = 12;
         let updateInterval = 90;
+
+        let isMouseDown = false;
+        let lastMouseX = null;
+        let lastMouseY = null;
+        let particleTrail = [];
     
         const colorThemes = [
             { name: 'Default', primary: '#00ffff', secondary: '#e94560', tertiary: '#c5ee4f', background: '#0c0c1d' },
@@ -292,7 +297,32 @@
                 this.energy = 100;
             }
         }
-    
+        class ParticleEffect {
+            constructor(x, y, character) {
+                this.x = x;
+                this.y = y;
+                this.character = character;
+                this.opacity = 1;
+                this.scale = 1.5;
+                this.lifetime = 20;
+            }
+        
+            update() {
+                this.opacity -= 0.05;
+                this.scale -= 0.025;
+                this.lifetime--;
+                return this.lifetime > 0;
+            }
+        
+            draw(ctx) {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                ctx.font = `${cellSize * this.scale}px ${currentFont.fontFamily}`;
+                ctx.fillStyle = currentTheme.tertiary;
+                ctx.fillText(this.character, this.x, this.y);
+                ctx.restore();
+            }
+        }
         function initThemeSelector() {
             const themeSelector = document.getElementById('themeSelector');
             themeSelector.innerHTML = '';
@@ -560,6 +590,10 @@
                     }
                 }
             }
+            particleTrail = particleTrail.filter(particle => {
+                particle.draw(ctx);
+                return particle.update();
+            });
         }
         
         function interpolateColor(color1, color2, factor) {
@@ -586,7 +620,46 @@
                 requestAnimationFrame(gameLoop);
             }
         }
-    
+        function handleMouseInteraction(e) {
+            
+            const rect = canvas.getBoundingClientRect();
+           
+            const currentX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+            const currentY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+            
+            if (lastMouseX !== null && lastMouseY !== null) {
+                const distance = Math.sqrt(
+                    Math.pow(currentX - lastMouseX, 2) + 
+                    Math.pow(currentY - lastMouseY, 2)
+                );
+                
+                const steps = Math.max(1, Math.floor(distance / (cellSize / 2)));
+                
+                for (let i = 0; i <= steps; i++) {
+                    const progress = i / steps;
+                    const x = lastMouseX + (currentX - lastMouseX) * progress;
+                    const y = lastMouseY + (currentY - lastMouseY) * progress;
+                    
+                    const gridX = Math.floor(y / cellSize);
+                    const gridY = Math.floor(x / cellSize);
+                    
+                    if (gridX >= 0 && gridX < height && gridY >= 0 && gridY < width) {
+                        const randomChar = characters[Math.floor(Math.random() * characters.length)];
+                        grid[gridX][gridY] = new Entity(randomChar);
+                        
+                        particleTrail.push(new ParticleEffect(
+                            gridY * cellSize + cellSize / 2,
+                            gridX * cellSize + cellSize / 2,
+                            randomChar
+                        ));
+                    }
+                }
+            }
+            
+            lastMouseX = currentX;
+            lastMouseY = currentY;
+        }
+        
         let lastUpdateTime = 0;
     
         togglePanel.addEventListener('click', () => {
@@ -612,7 +685,31 @@
         });
     
         resetBtn.addEventListener('click', initGrid);
-    
+        canvas.addEventListener('mousedown', (e) => {
+            isMouseDown = true;
+            const rect = canvas.getBoundingClientRect();
+            lastMouseX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+            lastMouseY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+            handleMouseInteraction(e);
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (isMouseDown) {
+                handleMouseInteraction(e);
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isMouseDown = false;
+            lastMouseX = null;
+            lastMouseY = null;
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            isMouseDown = false;
+            lastMouseX = null;
+            lastMouseY = null;
+        });
 
         document.addEventListener('DOMContentLoaded', () => {
    
